@@ -175,9 +175,10 @@ impl SwayosdWindow {
 
 		let brightness = brightness_backend.get_current() as f64;
 		let max = brightness_backend.get_max() as f64;
-		let progress = self.build_progress_widget(brightness / max);
+		let f = 0.05;
+		let progress = self.build_progress_widget((1.0 + brightness / (f * max)).ln() / (1.0 + 1.0 / f).ln());
 		let label = self.build_text_widget(
-			&Some(format!("{}%", (brightness / max * 100.).round() as i32)),
+			&Some(format!("{}%", (((1.0 + brightness / (f * max)).ln() / (1.0 + 1.0 / f).ln()) * 100.0) as i32)),
 			Some(4),
 		);
 

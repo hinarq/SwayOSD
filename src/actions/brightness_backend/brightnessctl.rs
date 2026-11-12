@@ -6,6 +6,8 @@ use anyhow::bail;
 use std::{error::Error, process::Command, str::FromStr};
 use thiserror::Error;
 
+use crate::application::ActionOptions;
+
 enum CliArg<'arg> {
 	Simple(&'arg str),
 	KeyValue { key: &'arg str, value: &'arg str },
@@ -149,27 +151,47 @@ impl BrightnessBackend for BrightnessCtl {
 	}
 
 	fn lower(&mut self, by: u32, min: u32) -> anyhow::Result<()> {
+		let custom_levels = 100.0;
 		let max = self.device.get_max();
-		let curr = self.device.get_current();
-		let step = div_round_u32(by * max, 100);
-		let new_val = curr.saturating_sub(step);
-		let min_raw = div_round_u32(min * max, 100);
-		self.device.set_raw(new_val.max(min_raw))
+		let curr = self.device.get_current() as f64;
+		let max = max as f64;
+		let f = 0.05;
+		let eps = f * max;
+		let base = (1.0 + 1.0 / f);
+		let curr_ref: f64 = (1.0 + curr / eps).ln();
+		let max_ref: f64 = (1.0 + 1.0 / f).ln();
+		let curr_ratio = curr_ref / max_ref;
+		let new_val_float: f64 = eps * (base.powf(curr_ratio - f64::from(by) / custom_levels) - 1.0);
+		let new_val = new_val_float as u32;
+		self.device.set_raw(new_val.max(min))
 	}
 
 	fn raise(&mut self, by: u32, min: u32) -> anyhow::Result<()> {
+		let custom_levels = 100.0;
 		let max = self.device.get_max();
-		let curr = self.device.get_current();
-		let step = div_round_u32(by * max, 100);
-		let new_val = (curr + step).min(max);
-		let min_raw = div_round_u32(min * max, 100);
-		self.device.set_raw(new_val.max(min_raw))
+		let curr = self.device.get_current() as f64;
+		let max = max as f64;
+		let f = 0.05;
+		let eps = f * max;
+		let base = (1.0 + 1.0 / f);
+		let curr_ref: f64 = (1.0 + curr / eps).ln();
+		let max_ref: f64 = (1.0 + 1.0 / f).ln();
+		let curr_ratio = curr_ref / max_ref;
+		let new_val_float: f64 = eps * (base.powf(curr_ratio + f64::from(by) / custom_levels) - 1.0);
+		let new_val = new_val_float as u32;
+		self.device.set_raw(new_val.max(min))
 	}
 
 	fn set(&mut self, val: u32, min: u32) -> anyhow::Result<()> {
-		let max = self.device.get_max();
-		let raw_val = div_round_u32(val.max(min) * max, 100);
-		self.device.set_raw(raw_val)
+		let val = val as f64;
+		let custom_levels = 100.0;
+		let max = self.device.get_max() as f64;
+		let f = 0.05;
+		let eps = f * max;
+		let base = (1.0 + 1.0 / f);
+		let new_val_float: f64 = eps * (base.powf(val / custom_levels) - 1.0);
+		let new_val = new_val_float as u32;
+		self.device.set_raw(new_val)
 	}
 }
 

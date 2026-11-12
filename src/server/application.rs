@@ -44,7 +44,7 @@ impl ActionOptions {
 	pub fn new() -> Self {
 		Self {
 			max_volume: ActionField::new(100_u8),
-			min_brightness: ActionField::new(5_u32),
+			min_brightness: ActionField::new(0_u32),
 			device_name: ActionOptionalField::new(None),
 			monitor_name: ActionOptionalField::new(None),
 			icon_name: ActionOptionalField::new(None),
@@ -52,7 +52,7 @@ impl ActionOptions {
 			player_name: ActionOptionalField::new(None),
 			top_margin: ActionField::new(0.85_f32),
 			duration: ActionField::new(1000),
-			show_percentage: ActionField::new(false),
+			show_percentage: ActionField::new(true),
 		}
 	}
 }
